@@ -148,8 +148,26 @@ DOMDisplay.prototype.scrollPlayerIntoView = function() {
     this.wrap.scrollTop = center.y - margin;
   else if (center.y > bottom - margin)
     this.wrap.scrollTop = center.y + margin - height;
-};
+ };
 
+Level.prototype.obstacleAT = function(pos, size) {
+        var xStart = Math.floor(pos.x);
+	    var xEnd = Math.ceil(pos.x + size.x);
+	    var yStart = Math.floor(pos.y);
+	    var yEnd = (Math.ceil(pos.y + size.y));
+	
+	    if (xStart < 0 || xEnd > this.width || yStart < 0 || yEnd > this.height)
+		       return 'wall';
+	
+	    for (var y = yStart; y < yEnd; y++) {
+		        for (var x = xStart; x < xEnd; x++) {
+			            var fieldType = this.grid[y][x];
+			            if (fieldType) {
+				                return fieldType;
+			}
+		}
+	}
+};
 
 // Update simulation each step based on keys & step size
 Level.prototype.animate = function(step, keys) {
@@ -163,10 +181,10 @@ Level.prototype.animate = function(step, keys) {
     step -= thisStep;
   }
 };
-
+  
 var maxStep = 0.05;
 
-var playerXSpeed = 7;
+var playerXSpeed = 8;
 
 Player.prototype.moveX = function(step, level, keys) {
   this.speed.x = 0;
@@ -175,23 +193,34 @@ Player.prototype.moveX = function(step, level, keys) {
 
   var motion = new Vector(this.speed.x * step, 0);
   var newPos = this.pos.plus(motion);
+  var obstacle = level.obstacleAT(newPos, this.size);
+  if (obstacle != "wall")
   this.pos = newPos;
-};
+        if (obstacle == "lava")
+		        this.pos = new Vector(10,10);
+ };
 
-var gravity = 30;
-var jumpSpeed = 17;
-var playerYSpeed = 7;
+var gravity = 50;
+var jumpSpeed = 25;
+var playerYSpeed = 28;
 
 Player.prototype.moveY = function(step, level, keys) {
-  this.speed.y = 0;
-  if (keys.up) this.speed.y -= playerYSpeed;
-  if (keys.down) this.speed.y += playerYSpeed;
+  this.speed.y += step * gravity;
   var motion = new Vector(0, this.speed.y * step);
   var newPos = this.pos.plus(motion);
+  var obstacle = level.obstacleAT(newPos, this.size);
+  if (obstacle) {
+	 if (keys.up && this.speed.y > 0)
+		 this.speed.y = -jumpSpeed;	 
+		else
+			this.speed.y = 0;
+  } else {
+          this.pos = newPos;
+  }
+  if (obstacle == "lava")
+		this.pos = new Vector(10,10);
 
-  this.pos = newPos;
-
-};
+ };
 
 Player.prototype.act = function(step, level, keys) {
   this.moveX(step, level, keys);
